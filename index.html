@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neet Prep PWA</title>
+    <meta name="description" content="Progressive Web App for NEET preparation with Google Sheets integration">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Neet Prep">
+    <meta name="msapplication-TileColor" content="#2563eb">
+    
+    <!-- Icons -->
+    <link rel="apple-touch-icon" href="icons/icon-192x192.svg">
+    <link rel="icon" type="image/svg+xml" sizes="192x192" href="icons/icon-192x192.svg">
+    <link rel="icon" type="image/svg+xml" sizes="512x512" href="icons/icon-512x512.svg">
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>📚 NEET Prep</h1>
+            <div class="header-actions">
+                <button id="installBtn" class="install-btn" style="display: none;">
+                    📱 Install App
+                </button>
+                <button id="syncBtn" class="sync-btn">
+                    🔄 Sync with Sheets
+                </button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Authentication Section -->
+            <div class="auth-section" id="authSection">
+                <div class="auth-card">
+                    <h2>Connect to Google Sheets</h2>
+                    <p>Sign in to access your NEET quiz questions from Google Sheets</p>
+                    <p class="no-backend-notice">✅ No backend server needed - everything runs on your device!</p>
+                    <div id="g_id_onload"
+                         data-client_id="375600345001-lp91g4mtpltgnpaup23bh360nht0jrl4.apps.googleusercontent.com"
+                         data-callback="handleCredentialResponse"
+                         data-auto_prompt="false">
+                    </div>
+                    <div class="g_id_signin"
+                         data-type="standard"
+                         data-size="large"
+                         data-theme="outline"
+                         data-text="sign_in_with"
+                         data-shape="rectangular"
+                         data-logo_alignment="left"
+                         data-width="300">
+                    </div>
+                    <button id="authBtn" class="auth-btn" style="display: none;">
+                        🔐 Sign in with Google
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quiz Selection Section -->
+            <div class="quiz-selection" id="quizSelection" style="display: none;">
+                <div class="selection-card">
+                    <h2>📚 Start Your NEET Quiz</h2>
+                    <p>Select your subject and topic to begin</p>
+                    
+                    <div class="selection-form">
+                        <div class="form-group">
+                            <label for="subjectSelect">Subject *</label>
+                            <select id="subjectSelect" class="form-select" required>
+                                <option value="">Choose Subject</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="topicSelect">Topic/Chapter (Optional)</label>
+                            <select id="topicSelect" class="form-select">
+                                <option value="">All Topics</option>
+                            </select>
+                        </div>
+                        
+                        <div class="quiz-info">
+                            <div class="info-item">
+                                <span class="info-icon">📝</span>
+                                <span>20 Questions</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-icon">⏱️</span>
+                                <span>No Time Limit</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-icon">📊</span>
+                                <span>Instant Results</span>
+                            </div>
+                        </div>
+                        
+                        <button id="startQuizBtn" class="start-quiz-btn" disabled>
+                            🚀 Start Quiz
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quiz Section -->
+            <div class="quiz-container" id="quizContainer" style="display: none;">
+                <div class="quiz-header">
+                    <div class="quiz-progress">
+                        <span id="questionNumber">1</span> / <span id="totalQuestions">20</span>
+                    </div>
+                    <div class="quiz-subject" id="quizSubject">Physics</div>
+                </div>
+                
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                
+                <div class="question-card">
+                    <h3 id="questionText">Loading question...</h3>
+                    <div class="options-container" id="optionsContainer">
+                        <!-- Options will be populated here -->
+                    </div>
+                </div>
+                
+                <div class="quiz-actions">
+                    <button id="nextQuestionBtn" class="next-btn" disabled>
+                        Next Question →
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="results-container" id="resultsContainer" style="display: none;">
+                <div class="results-card">
+                    <div class="results-header">
+                        <h2>🎉 Quiz Completed!</h2>
+                        <div class="score-display">
+                            <div class="score-circle">
+                                <span id="scorePercentage">0%</span>
+                            </div>
+                            <div class="score-details">
+                                <div class="score-item">
+                                    <span class="score-label">Correct:</span>
+                                    <span id="correctCount" class="score-value">0</span>
+                                </div>
+                                <div class="score-item">
+                                    <span class="score-label">Attempted:</span>
+                                    <span id="attemptedCount" class="score-value">0</span>
+                                </div>
+                                <div class="score-item">
+                                    <span class="score-label">Total:</span>
+                                    <span id="totalCount" class="score-value">20</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="results-actions">
+                        <button id="viewSummaryBtn" class="summary-btn">
+                            📋 View Detailed Summary
+                        </button>
+                        <button id="retakeQuizBtn" class="retake-btn">
+                            🔄 Take Another Quiz
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Section -->
+            <div class="summary-container" id="summaryContainer" style="display: none;">
+                <div class="summary-header">
+                    <h2>📋 Quiz Summary</h2>
+                    <button id="backToResultsBtn" class="back-btn">← Back to Results</button>
+                </div>
+                
+                <div class="summary-content" id="summaryContent">
+                    <!-- Summary will be populated here -->
+                </div>
+            </div>
+
+            <!-- Dashboard Section (Hidden by default) -->
+            <div class="dashboard" id="dashboard" style="display: none;">
+                <div class="sheets-controls">
+                    <h3>Google Sheets Integration</h3>
+                    <div class="controls">
+                        <input type="text" id="sheetId" placeholder="Enter Google Sheet ID (optional)" class="sheet-input" value="1bSImKOku57K7bJJa0_qdBKdmQg3p-J9ZcV71JPIPIto">
+                        <button id="loadSheetBtn" class="load-btn">📊 Load Your Sheet</button>
+                    </div>
+                    <div class="sheet-info">
+                        <p><strong>Your Sheet:</strong> <a href="https://docs.google.com/spreadsheets/d/1bSImKOku57K7bJJa0_qdBKdmQg3p-J9ZcV71JPIPIto/edit" target="_blank" style="color: #3b82f6;">Open in Google Sheets</a></p>
+                    </div>
+                    <div id="sheetPreview" class="sheet-preview"></div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="app-footer">
+            <p>NEET Prep PWA - Study Smarter, Not Harder</p>
+        </footer>
+    </div>
+
+    <!-- Loading overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+        <p>Loading...</p>
+    </div>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+</body>
+</html>
