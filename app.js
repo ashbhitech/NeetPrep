@@ -42,6 +42,9 @@ class NeetQuizApp {
         // Check authentication status
         await this.checkAuthStatus();
         
+        // Add test mode for demo purposes
+        this.testMode = false; // Set to true to use mock data for all users
+        
         // Setup PWA installation
         this.setupPWAInstallation();
         
@@ -103,6 +106,11 @@ class NeetQuizApp {
         
         document.getElementById('topicSelect').addEventListener('change', () => {
             this.updateStartButton();
+        });
+        
+        // Question count selection change
+        document.getElementById('questionCountSelect').addEventListener('change', () => {
+            this.updateQuestionCountDisplay();
         });
         
         document.getElementById('startQuizBtn').addEventListener('click', () => {
@@ -236,12 +244,26 @@ class NeetQuizApp {
     
     async loadSheetData() {
         if (!this.isAuthenticated) return;
-        
+
         try {
             this.showLoading('Loading quiz questions...');
-            
+
             const sheetId = '1bSImKOku57K7bJJa0_qdBKdmQg3p-J9ZcV71JPIPIto'; 
+
+            // Check if user is the sheet owner or if test mode is enabled
+            const userEmail = this.userInfo?.email;
+            const isOwner = userEmail === 'bhideashish@gmail.com'; // Your email
             
+            if (this.testMode) {
+                console.log('Test mode enabled - using mock data for:', userEmail);
+                this.loadMockData();
+                this.hideLoading();
+                return;
+            }
+            
+            // For now, allow all authenticated users to access the sheet
+            console.log('Loading real Google Sheet data for user:', userEmail);
+
             // Try to load from Google Sheets if we have an access token
             if (this.accessToken) {
                 console.log('Loading from Google Sheets using direct API calls...');
@@ -447,9 +469,21 @@ class NeetQuizApp {
         const subjectSelect = document.getElementById('subjectSelect');
         const subjects = [...new Set(this.quizData.map(q => q.subject))].sort();
         
-        // Clear existing options except the first one
+        // Clear existing options
         subjectSelect.innerHTML = '<option value="">Choose Subject</option>';
         
+        // Add custom options first
+        const allSubjectsOption = document.createElement('option');
+        allSubjectsOption.value = 'All Subjects';
+        allSubjectsOption.textContent = 'All Subjects';
+        subjectSelect.appendChild(allSubjectsOption);
+        
+        const biologyOption = document.createElement('option');
+        biologyOption.value = 'Biology';
+        biologyOption.textContent = 'Biology';
+        subjectSelect.appendChild(biologyOption);
+        
+        // Add individual subjects
         subjects.forEach(subject => {
             const option = document.createElement('option');
             option.value = subject;
@@ -463,15 +497,39 @@ class NeetQuizApp {
         const topicSelect = document.getElementById('topicSelect');
         const selectedSubject = subjectSelect.value;
         
+        console.log('updateTopicOptions called with selectedSubject:', selectedSubject);
+        console.log('Total quizData length:', this.quizData.length);
+        console.log('Available subjects:', [...new Set(this.quizData.map(q => q.subject))]);
+        
         // Clear existing options except the first one
         topicSelect.innerHTML = '<option value="">All Topics</option>';
         
         if (selectedSubject) {
+            let filteredQuestions = [];
+            
+            if (selectedSubject === 'All Subjects') {
+                // For All Subjects, show all topics
+                filteredQuestions = [...this.quizData];
+                console.log('All Subjects - filtered questions:', filteredQuestions.length);
+            } else if (selectedSubject === 'Biology') {
+                // For Biology, include both Zoology and Botany
+                filteredQuestions = this.quizData.filter(q => 
+                    q.subject === 'Zoology' || q.subject === 'Botany'
+                );
+                console.log('Biology - filtered questions:', filteredQuestions.length);
+                console.log('Zoology questions:', this.quizData.filter(q => q.subject === 'Zoology').length);
+                console.log('Botany questions:', this.quizData.filter(q => q.subject === 'Botany').length);
+            } else {
+                // For individual subjects
+                filteredQuestions = this.quizData.filter(q => q.subject === selectedSubject);
+                console.log(`${selectedSubject} - filtered questions:`, filteredQuestions.length);
+            }
+            
             const topics = [...new Set(
-                this.quizData
-                    .filter(q => q.subject === selectedSubject)
-                    .map(q => q.topic)
+                filteredQuestions.map(q => q.topic)
             )].sort();
+            
+            console.log('Available topics:', topics);
             
             topics.forEach(topic => {
                 const option = document.createElement('option');
@@ -489,12 +547,22 @@ class NeetQuizApp {
         startBtn.disabled = !subjectSelect.value;
     }
     
+    updateQuestionCountDisplay() {
+        const questionCountSelect = document.getElementById('questionCountSelect');
+        const questionCountDisplay = document.getElementById('questionCountDisplay');
+        
+        const selectedCount = questionCountSelect.value;
+        questionCountDisplay.textContent = `${selectedCount} Questions`;
+    }
+    
     startQuiz() {
         const subjectSelect = document.getElementById('subjectSelect');
         const topicSelect = document.getElementById('topicSelect');
+        const questionCountSelect = document.getElementById('questionCountSelect');
         
         const selectedSubject = subjectSelect.value;
         const selectedTopic = topicSelect.value;
+        const questionCount = parseInt(questionCountSelect.value);
         
         if (!selectedSubject) {
             this.showError('Please select a subject');
@@ -502,14 +570,27 @@ class NeetQuizApp {
         }
         
         // Filter questions based on selection
-        let filteredQuestions = this.quizData.filter(q => q.subject === selectedSubject);
+        let filteredQuestions = [];
+        
+        if (selectedSubject === 'All Subjects') {
+            // Include all questions from all subjects
+            filteredQuestions = [...this.quizData];
+        } else if (selectedSubject === 'Biology') {
+            // Include questions from both Zoology and Botany
+            filteredQuestions = this.quizData.filter(q => 
+                q.subject === 'Zoology' || q.subject === 'Botany'
+            );
+        } else {
+            // Include questions from the specific subject
+            filteredQuestions = this.quizData.filter(q => q.subject === selectedSubject);
+        }
         
         if (selectedTopic) {
             filteredQuestions = filteredQuestions.filter(q => q.topic === selectedTopic);
         }
         
-        // Shuffle and take 20 questions
-        this.currentQuiz = this.shuffleArray([...filteredQuestions]).slice(0, 20);
+        // Shuffle and take selected number of questions
+        this.currentQuiz = this.shuffleArray([...filteredQuestions]).slice(0, questionCount);
         
         if (this.currentQuiz.length === 0) {
             this.showError('No questions found for the selected subject and topic');

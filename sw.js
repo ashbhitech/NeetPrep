@@ -1,4 +1,4 @@
-const CACHE_NAME = 'neet-prep-pwa-v1';
+const CACHE_NAME = 'neet-prep-pwa-v4';
 const urlsToCache = [
     '/',
     '/index.html',

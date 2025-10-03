@@ -89,10 +89,18 @@
                             </select>
                         </div>
                         
+                        <div class="form-group">
+                            <label for="questionCountSelect">Number of Questions</label>
+                            <select id="questionCountSelect" class="form-select">
+                                <option value="15" selected>15 Questions (Good Start)</option>
+                                <option value="45">45 Questions (Pro)</option>
+                            </select>
+                        </div>
+                        
                         <div class="quiz-info">
                             <div class="info-item">
                                 <span class="info-icon">📝</span>
-                                <span>20 Questions</span>
+                                <span id="questionCountDisplay">15 Questions</span>
                             </div>
                             <div class="info-item">
                                 <span class="info-icon">⏱️</span>
